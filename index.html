@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" type="image/ico" href="favicon.ico" />
+  <title>Keymap.json to keymap.c</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+  <style>
+    .fullWidth {
+      width: 100%;
+      min-height: 200px;
+      white-space: pre;
+      overflow: scroll;
+    }
+    textarea {
+      font-family: 'Courier New', Courier, monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid pb-5">
+    <div class="row-fluid mt-5">
+      <div class="col">
+        <h1 class="font-weight-bold">Keymap.json to keymap.c</h1><hr>
+        <p>
+          This is an array key formatter tool for keymap qmk configuration. Based on pastebin <a class="font-weight-bold" href="https://pastebin.com/y5dwRWm6">y5dwRWm6</a>
+        </p>
+        <form class="form mt-5">
+          <h2>Keymap Json File from <a class="font-weight-bold" href="https://config.qmk.fm/" target="_blank">config.qmk.fm</a></h2><hr>
+          <div class="form-group"><textarea id="configFile" class="fullWidth"></textarea></div>
+
+          <h2>Keymap.c</h2><hr>
+          <div class="form-group">
+            <label>Keyboard</label>
+            <input class="form-control col-5" id="infoKeyboard" disabled>
+          </div>
+
+          <div class="form-group">
+            <label>Keymap Name</label>
+            <input class="form-control col-5" id="infoKeymapName" disabled>
+          </div>
+
+          <div class="form-group">
+            <label>Layout Name</label>
+            <input class="form-control col-5" id="infoLayoutName" disabled>
+          </div>
+
+          <div class="form-group">
+            <label>Layers</label>
+            <input class="form-control col-5" id="infoNumLayers" disabled>
+          </div>
+
+          <div class="form-group">
+            <label>Output Keymap.c</label>
+            <textarea id="keymap" class="fullWidth" rows="13"></textarea>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // On load
+    document.addEventListener("DomContentLoaded", setup, false);
+    window.onload = setup;
+
+    // DOM
+    var configFile, infoKeyboard, infoKeymapName, infoLayoutName, infoNumLayers, Keymap;
+
+    function setup() {
+      configFile      = document.getElementById("configFile");
+      infoKeyboard    = document.getElementById("infoKeyboard");
+      infoKeymapName  = document.getElementById("infoKeymapName");
+      infoLayoutName  = document.getElementById("infoLayoutName");
+      infoNumLayers   = document.getElementById("infoNumLayers");
+      outputKeymap    = document.getElementById("keymap");
+
+      // Listen for load button
+      configFile.addEventListener("input", function() {
+        ConfigToC(configFile.value);
+      });
+    }
+
+    function ConfigToC(configString) {
+      let json = '';
+      try {
+        json = JSON.parse(configString);
+      } catch(e) {
+        return false;
+      }
+
+      let keyboard = json["keyboard"];
+      let keymap = json["keymap"];
+      let layout = json["layout"];
+      let layers = json["layers"];
+
+      let output = `const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = { \n`;
+      layers.forEach((layer, i) => {
+        if (i > 0) output += `\n`;
+        output += `[${i}] = ${layout}( \\ \n`;
+
+        layer.forEach((key, j) => {
+          switch (j) {
+            case 0:
+              output += `//,-----------------------------------------------------.                    ,-----------------------------------------------------.\n  `;
+              break;
+            case 12:
+            case 24:
+              output += ` \\\n//|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|\n  `;
+              break;
+            case 36:
+              output += ` \\\n//|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|\n                                        `;
+              break;
+            case 6:
+            case 18:
+            case 30:
+              output += `                     `;
+              break;
+            case 39:
+              output += `  `;
+              break;
+          }
+
+          key = key.replace('KC_NO', 'XXXXXXX');
+          let before, after;
+          switch(key.length + 1) {
+            case 5:
+              before = '   ';
+              after  = ' ';
+              break;
+            case 6:
+              before = '  ';
+              after  = ' ';
+              break;
+            case 7:
+              before = '  ';
+              after  = '';
+              break;
+            case 8:
+            case 9:
+              before = ' ';
+              after  = '';
+              break;
+            default:
+              before = '';
+              after  = '';
+              break;
+          }
+          output += `${before}${key},${after}`;
+        });
+        output += " \\\n                                     //`--------------------------'  `--------------------------'\n";
+        output += `)`;
+      });
+      output += `\n}`;
+
+      SetOutput(keyboard, keymap, layout, layers.length, output);
+    }
+
+    function SetOutput(keyboard, keymapName, layoutName, numLayers, keymap) {
+      infoKeyboard.value    = keyboard;
+      infoKeymapName.value  = keymapName;
+      infoLayoutName.value  = layoutName;
+      infoNumLayers.value   = numLayers;
+      outputKeymap.value    = keymap;
+    }
+  </script>
+</body>
+</html>
