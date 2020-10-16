@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="shortcut icon" type="image/ico" href="favicon.ico" />
-  <title>Keymap.json to keymap.c</title>
+  <title>Corne keymap.json to keymap.c</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
   <style>
     .fullWidth {
       width: 100%;
-      min-height: 200px;
+      min-height: 50px;
       white-space: pre;
       overflow: scroll;
     }
@@ -22,7 +22,7 @@
   <div class="container-fluid pb-5">
     <div class="row-fluid mt-5">
       <div class="col">
-        <h1 class="font-weight-bold">Keymap.json to keymap.c</h1><hr>
+        <h1 class="font-weight-bold">Corne keymap.json to keymap.c</h1><hr>
         <p>
           This is an array key formatter tool for keymap qmk configuration. Based on pastebin <a class="font-weight-bold" href="https://pastebin.com/y5dwRWm6">y5dwRWm6</a>
         </p>
@@ -125,6 +125,22 @@
           key = key.replace('KC_NO', 'XXXXXXX');
           let before, after;
           switch(key.length + 1) {
+            case 1:
+              before = '     ';
+              after  = '   ';
+              break;
+            case 2:
+              before = '    ';
+              after  = '   ';
+              break;
+            case 3:
+              before = '    ';
+              after  = '   ';
+              break;
+            case 4:
+              before = '    ';
+              after  = '  ';
+              break;
             case 5:
               before = '   ';
               after  = ' ';
@@ -147,12 +163,14 @@
               after  = '';
               break;
           }
-          output += `${before}${key},${after}`;
+          let comma = ',';
+          if (j == 41) comma = '';
+          output += `${before}${key}${comma}${after}`;
         });
         output += " \\\n                                     //`--------------------------'  `--------------------------'\n";
-        output += `)`;
+        output += (i != layers.length - 1)?`),`:`)`;
       });
-      output += `\n}`;
+      output += `\n};`;
 
       SetOutput(keyboard, keymap, layout, layers.length, output);
     }
